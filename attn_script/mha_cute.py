@@ -18,7 +18,7 @@ Example of causal attention with online softmax
 def causal_mask(b, h, q_idx, kv_idx):
     return q_idx >= kv_idx
 
-D = 128 # 128
+D = 64 # 128
 softmax_scale = (1/D) ** 0.5
 softmax_scale_log2e = softmax_scale * math.log2(math.e)
 # elementwise on attention scores
@@ -67,7 +67,7 @@ class OnlineSoftmax(OnlineFunc):
     @staticmethod
     def online_fwd_epilogue(o, online_rowscales, b, h, q_idx):
         o_new = o / online_rowscales["r"]
-        lse = (online_rowscales["r"]).log() + online_rowscales["m"]*softmax_scale_log2e
+        lse = (online_rowscales["r"]).log() + online_rowscales["m"]*softmax_scale
         final_rowscales = {
             "lse": lse,
         }
@@ -83,85 +83,31 @@ class OnlineSoftmax(OnlineFunc):
     def backward(dp, scores, final_rowscales, doosum_rowscales, b, h, q_idx, kv_idx):
         dppsum = doosum_rowscales # external_bwd_tensor.input_tensors["dppsum"]
         dscores = (dp - dppsum)*scores # TODO: bug if swap
-        return dscores
-    
-def eval():
-    import itertools
-    BHSDDV = list(
-        # itertools.product(
-        #     (1,8),
-        #     (32,),
-        #     (2048,4096,8192),
-        #     (128,),
-        #     (128,),
-        # )
-        itertools.product(
-            (1,8),
-            (12,),
-            (2048,4096,8192),
-            (128,),
-            (256,),
-        )
-        # itertools.product(
-        #     (1,),
-        #     (8,),
-        #     (2048,4096,32768, 65536),
-        #     (96,),
-        #     (192,),
-        # )
-    )
-    dtype = torch.bfloat16
-    for B,H,S,D,DV in BHSDDV:
-        qkv_meta = (
-            meta_tensor(B, H, S, D, dtype=dtype),
-            meta_tensor(B, H, S, D, dtype=dtype),
-            meta_tensor(B, H, S, DV, dtype=dtype),
-        )
-
-        custom_fwd_inputs = CustomIO({
-            # "softmax_scale": (1,),
-        })
-
-        online = OnlineSoftmax()
-        block_mask = create_block_mask(causal_mask, 1, 1, S, S, device="cuda")
-
-        mod = AttentionEngine(
-            qkv_meta,
-            custom_fwd_inputs, score_mod=score_mod, block_mask=block_mask,
-            online_func=online,
-            backend="cute"
-        )
-
-
-        from benchmark.bench_utils import do_bench_attention
-        print(f"B={B}, H={H}, S={S}, D={D}, DV={DV}, dtype={dtype}")
-        do_bench_attention(mod, B, H, S, D, DV, dtype=dtype)
-        
+        return dscores      
 
 if __name__ == "__main__":
-    # B, H ,S, D,DV = 1,12,2048,D,256
-    # dtype = torch.bfloat16
-    # qkv_meta = (
-    #     meta_tensor(B, H, S, D, dtype=dtype),
-    #     meta_tensor(B, H, S, D, dtype=dtype),
-    #     meta_tensor(B, H, S, DV, dtype=dtype),
-    # )
+    B, H ,S, D,DV = 1,12,2048,D,64
+    dtype = torch.bfloat16
+    qkv_meta = (
+        meta_tensor(B, H, S, D, dtype=dtype),
+        meta_tensor(B, H, S, D, dtype=dtype),
+        meta_tensor(B, H, S, DV, dtype=dtype),
+    )
 
-    # custom_fwd_inputs = CustomIO({
-    #     # "softmax_scale": (1,),
-    # })
+    custom_fwd_inputs = CustomIO({
+        # "softmax_scale": (1,),
+    })
 
-    # online = OnlineSoftmax()
-    # block_mask = create_block_mask(causal_mask, 1, 1, S, S, device="cuda")
+    online = OnlineSoftmax()
+    block_mask = create_block_mask(causal_mask, 1, 1, S, S, device="cuda")
 
-    # mod = AttentionEngine(
-    #     qkv_meta,
-    #     custom_fwd_inputs, score_mod=score_mod, block_mask=block_mask,
-    #     online_func=online,
-    #     backend="cute"
-    # )
+    mod = AttentionEngine(
+        qkv_meta,
+        custom_fwd_inputs, score_mod=score_mod, block_mask=block_mask,
+        online_func=online,
+        backend="cute"
+    )
 
 
-    # from benchmark.bench_utils import do_bench_attention
-    # do_bench_attention(mod, B, H, S, D, DV, dtype=dtype)
-    eval()
+    from benchmark.bench_utils import do_bench_attention
+    do_bench_attention(mod, B, H, S, D, DV, dtype=dtype, require_grad=True)

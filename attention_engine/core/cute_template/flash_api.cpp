@@ -466,9 +466,18 @@ mha_fwd(at::Tensor &q,         // batch_size x seqlen_q x num_heads x head_size
     return {out, q_padded, k_padded, v_padded, out_padded, {{final_rowscale_return}} p};
 }
 
+// whether has_member
+// TODO: tmp solution 
+template < typename T, typename = void >
+struct has_member_x : std::false_type {};
+
+template < typename T >
+struct has_member_x<T, std::void_t<decltype(std::declval<T>().softmax_lse_ptr)>> : std::true_type {};
+
 void run_mha_bwd(Flash_bwd_params &params, cudaStream_t stream) {
 
-    if (params.d=={{dimqk}} && params.vd=={{dimv}}) {
+    if ( has_member_x<Flash_bwd_params>::value && 
+        params.d=={{dimqk}} && params.vd=={{dimv}}) {
         run_mha_bwd_<{{cutlass_dtype}}, {{dimqk}}, {{dimv}}>(params, stream);
     }
 //   // FP16_SWITCH(!params.is_bf16, [&] {

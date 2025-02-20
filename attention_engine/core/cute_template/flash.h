@@ -143,6 +143,10 @@ struct Flash_fwd_params : public Qkv_params {
 
 struct Flash_bwd_params : public Flash_fwd_params {
 
+    // TODO: tmp solution
+    // void *__restrict__ softmax_lse_ptr; 
+    {{global_ptr_params_def_bwd}}
+
     // The dO and dQKV matrices.
     void *__restrict__ do_ptr;
     void *__restrict__ dq_ptr;
