@@ -155,8 +155,8 @@ def flashattn_bwd_preprocess(batch, heads, seq_len, dim, dimv):
 
     @T.prim_func
     def flash_bwd_prep(
-        O: T.Buffer(shape, dtype), # type: ignore
-        dO: T.Buffer(shape, dtype), # type: ignore
+        O: T.Buffer(shape_v, dtype), # type: ignore
+        dO: T.Buffer(shape_v, dtype), # type: ignore
         Delta: T.Buffer([batch, heads, seq_len], accum_dtype), # type: ignore
     ):
         with T.Kernel(heads, T.ceildiv(seq_len, blk), batch) as (bx, by, bz):
@@ -208,8 +208,8 @@ def flashattn_bwd(batch, heads, seq_len, dim, dimv, is_casual,
     def flash_bwd(
         Q: T.Buffer(shape, dtype), # type: ignore
         K: T.Buffer(shape, dtype), # type: ignore
-        V: T.Buffer(shape, dtype), # type: ignore
-        dO: T.Buffer(shape, dtype), # type: ignore
+        V: T.Buffer(shape_v, dtype), # type: ignore
+        dO: T.Buffer(shape_v, dtype), # type: ignore
 
         # custom_fwd_inputs score_mod
         {{custom_fwd_inputs | indent(8)}}
@@ -222,7 +222,7 @@ def flashattn_bwd(batch, heads, seq_len, dim, dimv, is_casual,
 
         dQ: T.Buffer(shape, accum_dtype), # type: ignore
         dK: T.Buffer(shape, dtype), # type: ignore
-        dV: T.Buffer(shape, dtype), # type: ignore
+        dV: T.Buffer(shape_v, dtype), # type: ignore
     ):
         with T.Kernel(heads, T.ceildiv(seq_len, block_M), batch, threads=thread_num) as (bx, by, bz):
             K_shared = T.alloc_shared([block_M, dim], dtype)
