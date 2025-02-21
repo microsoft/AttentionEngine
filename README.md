@@ -30,20 +30,18 @@ AttentionEngine achieves exceptional performance across a variety of customized 
 
 
 # Installation
-- install cuda==12.4 & pytorch
+- install cuda==12.4 & pytorch, or use the docker image[Recommended]
+```
+pytorch/pytorch:2.6.0-cuda12.4-cudnn9-devel
+```
 - clone the repo and its submodule
 ```
 git clone --recursive https://github.com/smallscientist1/AttentionEngine.git
 ```
-- install tvm
-```
-cd 3rdparties/tvm
-mkdir -p build && cd build && cp ../cmake/config.cmake . && cmake .. && make -j && cd -
-cd ../../
-```
+- install **TileLang**: change directory `cd 3rd_parties/tilelang` and build TileLang from source according to this link (https://github.com/tile-ai/tilelang/blob/main/docs/get_started/Installation.md#method-2-install-from-source-using-the-bundled-tvm-submodule)
 - export some environment variables
 ```
-export PYTHONPATH="$(pwd)/attention_engine:$(pwd)/3rd_parties/tvm/python:$PYTHONPATH"
+export PYTHONPATH="$(pwd)/attention_engine:$(pwd)/3rd_parties/tilelang:$PYTHONPATH"
 export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libcuda.so
 ```
 

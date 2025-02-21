@@ -5,3 +5,7 @@
 	path = 3rd_parties/tvm
 	url = https://github.com/microsoft/AttentionEngine.git
 	branch = attnengine_upstream
+[submodule "3rd_parties/tilelang"]
+	path = 3rd_parties/tilelang
+	url = https://github.com/smallscientist1/tilelang.git
+	branch = AttentionEngine_upstream
