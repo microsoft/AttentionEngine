@@ -1,6 +1,6 @@
 import torch
-from tvm import tl
-import tvm.tl.language as T
+import tilelang as tl
+import tilelang.language as T
 
 import triton.language as triton_lang
 import triton
@@ -653,9 +653,9 @@ class LinearAttention(torch.autograd.Function):
         decay_cumsum = chunk_local_cumsum_scalar(
             {{decay_name}}, BT
         )
-        chunk_fwd_h_mod = tl.cached(chunk_fwd_h, {{output_idx_list_h}}, BATCH, HQ,HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_h, BV_h, num_stages_h, num_threads_h)
+        chunk_fwd_h_mod = tl.profiler.cached(chunk_fwd_h, {{output_idx_list_h}}, BATCH, HQ,HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_h, BV_h, num_stages_h, num_threads_h)
         output_idx_list = {{output_idx_list_o}}# [5,]
-        chunk_fwd_o_mod = tl.cached(chunk_o, output_idx_list, BATCH, HQ,HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_o, BV_o, num_stages_o, num_threads_o)
+        chunk_fwd_o_mod = tl.profiler.cached(chunk_o, output_idx_list, BATCH, HQ,HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_o, BV_o, num_stages_o, num_threads_o)
 
         h = chunk_fwd_h_mod({{k_name}}, {{v_name}}, decay_cumsum, {{custom_inputs_list_h}})
         o = chunk_fwd_o_mod(h, {{q_name}}, {{k_name}}, {{v_name}}, decay_cumsum, {{custom_inputs_list_o}})
@@ -709,10 +709,10 @@ class LinearAttention(torch.autograd.Function):
             {{decay_name2}}, BT
         )
         
-        chunk_fwd_h_mod = tl.cached(chunk_fwd_h, {{output_idx_list_h}}, BATCH, HQ,HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_h, BV_h, num_stages_h, num_threads_h)
-        chunk_bwd_dh_mod = tl.cached(chunk_bwd_kernel_dh, [5,], BATCH, HQ, HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_dh, BV_dh, num_stages_dh, num_threads_dh)
-        chunk_bwd_dqkg_mod = tl.cached(chunk_bwd_dqkg, [7,8,9,], BATCH, HQ, HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_dqkg, BV_dqkg, num_stages_dqkg, num_threads_dqkg)
-        chunk_bwd_dv_mod = tl.cached(chunk_bwd_kernel_dv, [5,], BATCH, HQ, HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_dv, BV_dv, num_stages_dv, num_threads_dv)
+        chunk_fwd_h_mod = tl.profiler.cached(chunk_fwd_h, {{output_idx_list_h}}, BATCH, HQ,HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_h, BV_h, num_stages_h, num_threads_h)
+        chunk_bwd_dh_mod = tl.profiler.cached(chunk_bwd_kernel_dh, [5,], BATCH, HQ, HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_dh, BV_dh, num_stages_dh, num_threads_dh)
+        chunk_bwd_dqkg_mod = tl.profiler.cached(chunk_bwd_dqkg, [7,8,9,], BATCH, HQ, HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_dqkg, BV_dqkg, num_stages_dqkg, num_threads_dqkg)
+        chunk_bwd_dv_mod = tl.profiler.cached(chunk_bwd_kernel_dv, [5,], BATCH, HQ, HK, H, N_CTX, D_HEAD, D_HEADV, BT, BK_dv, BV_dv, num_stages_dv, num_threads_dv)
         
         h = chunk_fwd_h_mod({{k_name2}}, {{v_name2}}, decay_cumsum, {{custom_inputs_list_h}})
         

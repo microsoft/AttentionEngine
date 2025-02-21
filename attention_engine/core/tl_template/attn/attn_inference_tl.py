@@ -1,7 +1,7 @@
 # TL_IMPORT = """
 import torch
-from tvm import tl
-import tvm.tl.language as T
+import tilelang as tl
+import tilelang.language as T
 import torch.nn.functional as F
 
 # TL_GLOBAL_FUNC = """
@@ -243,7 +243,7 @@ class _attention(torch.autograd.Function):
         thread_num = {{thread_num}} # 256
         shared_fuse = {{shared_fuse}} # False
         output_idx_list = {{output_idx_list}}
-        mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTXQ, N_CTXKV, D_HEAD, D_HEADV, num_split, block_M, block_N, stages, thread_num, shared_fuse)
+        mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTXQ, N_CTXKV, D_HEAD, D_HEADV, num_split, block_M, block_N, stages, thread_num, shared_fuse)
         
         O_partial = torch.empty(BATCH, N_CTXQ, H, num_split, D_HEADV, dtype=q.dtype, device=q.device)
         {{torch_alloc_final_rowscales | indent(8)}}

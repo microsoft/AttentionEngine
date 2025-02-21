@@ -7,13 +7,13 @@ import concurrent.futures
 import traceback
 
 import torch
-from tvm import tl
-import tvm.tl.language as T
+import tilelang as tl
+import tilelang.language as T
 
 
 def cache_module(tuned_config, kernel, output_idx_list, problem_keys):
     try:  # cache
-        # mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
+        # mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
         program = kernel(*problem_keys.values(), *tuned_config.values())
         mod, params = tl.lower(program)
         return mod, params, tuned_config
@@ -73,7 +73,7 @@ def tl_tune(kernel, problem_keys, tuned_configs,
     # Step 2: Benchmark serially
     for mod, params, tuned_config in cached_results:
         try:
-            # mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
+            # mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
             # output_dict  = bench_func(mod, BATCH, H, N_CTX, D_HEAD, D_HEADV)
             mod_profile = tl.Profiler(
                 mod, params, output_idx_list, tl.TensorSupplyType.Randn)
@@ -111,7 +111,7 @@ def tl_tune(kernel, problem_keys, tuned_configs,
 
     # for tuned_config in tuned_configs:
     #     try:
-    #         mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
+    #         mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
     #     except Exception as e:
     #         print(e)
     #         continue
