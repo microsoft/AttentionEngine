@@ -185,9 +185,7 @@ def kernel(batch, heads, seq_len, seq_len_kv, dim, dimv,
             # T.copy(glse[bz, by, :, bx * block_M : (bx + 1) * block_M,], lse_shared)
             T.reduce_max(lse_local, lse_max_local, dim=0, clear=False)
             for k in T.Pipelined(num_split):
-                # CAUTION: This is a hack implementation to avoid the compilation bug, need to be fixed
-                # The correct implementation should be: T.copy(lse_local[k, :], lse_local_split)
-                T.copy(lse_local[0, :], lse_local_split)
+                T.copy(lse_local[k, :], lse_local_split)
                 for i in T.Parallel(block_M):
                     lse_logsum_local[i] += T.exp2(lse_local_split[i] - lse_max_local[i])
             for i in T.Parallel(block_M):
