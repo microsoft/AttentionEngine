@@ -171,8 +171,8 @@ def kernel(batch, heads, seq_len, seq_len_kv, dim, dimv,
             
             T.annotate_layout(
                 {
-                    o_accum_local: T.Fragment(o_accum_local.shape, lambda i, j: i),
-                    lse_local_split: T.Fragment(lse_local_split.shape, lambda i: i),
+                    o_accum_local: T.Fragment(o_accum_local.shape, forward_thread_fn=lambda i, j: i),
+                    lse_local_split: T.Fragment(lse_local_split.shape, forward_thread_fn=lambda i: i),
                     # logsum_accum_local: T.Fragment(logsum_accum_local.shape, lambda i: i),
                     o_shared: tl.layout.make_swizzled_layout(o_shared),
                     po_shared: tl.layout.make_swizzled_layout(po_shared),
@@ -233,7 +233,6 @@ class _attention(torch.autograd.Function):
             q = F.pad(q, (0, 0, 0 , 0, 0, {{block_M}} - N_CTXQ))
             N_CTXQ = {{block_M}}
             
-        
         num_split = 4
         block_M = {{block_M}} # 128
         block_N = {{block_N}} # 128 if D_HEAD <= 128 else 64
