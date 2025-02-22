@@ -78,7 +78,7 @@ def eval():
         from benchmark.bench_utils import do_bench_reluattn
         do_bench_reluattn(mod, B, H, S, D, D)
 if __name__ == "__main__":
-    B, H ,S, D = 64,16,2048,D
+    B, H ,S, D = 64,6,2048,D
     qkv_meta = (
         meta_tensor(B, H, S, D, dtype=torch.float16),
         meta_tensor(B, H, S, D, dtype=torch.float16),
@@ -92,6 +92,6 @@ if __name__ == "__main__":
         tune = True, tune_file = "reluattn_tune.json"
     )
     from benchmark.bench_utils import do_bench_reluattn
-    do_bench_reluattn(mod, B, H, S, D, D)
+    do_bench_reluattn(mod, B, H, S, D, D, requires_grad=True)
     # eval()
 

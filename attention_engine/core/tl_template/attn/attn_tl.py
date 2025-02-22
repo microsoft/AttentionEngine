@@ -1,7 +1,7 @@
 # TL_IMPORT = """
 import torch
-from tvm import tl
-import tvm.tl.language as T
+import tilelang as tl
+import tilelang.language as T
 
 # TL_GLOBAL_FUNC = """
 def fast_tanh(A, B):
@@ -155,8 +155,8 @@ def flashattn_bwd_preprocess(batch, heads, seq_len, dim, dimv):
 
     @T.prim_func
     def flash_bwd_prep(
-        O: T.Buffer(shape, dtype), # type: ignore
-        dO: T.Buffer(shape, dtype), # type: ignore
+        O: T.Buffer(shape_v, dtype), # type: ignore
+        dO: T.Buffer(shape_v, dtype), # type: ignore
         Delta: T.Buffer([batch, heads, seq_len], accum_dtype), # type: ignore
     ):
         with T.Kernel(heads, T.ceildiv(seq_len, blk), batch) as (bx, by, bz):
@@ -208,8 +208,8 @@ def flashattn_bwd(batch, heads, seq_len, dim, dimv, is_casual,
     def flash_bwd(
         Q: T.Buffer(shape, dtype), # type: ignore
         K: T.Buffer(shape, dtype), # type: ignore
-        V: T.Buffer(shape, dtype), # type: ignore
-        dO: T.Buffer(shape, dtype), # type: ignore
+        V: T.Buffer(shape_v, dtype), # type: ignore
+        dO: T.Buffer(shape_v, dtype), # type: ignore
 
         # custom_fwd_inputs score_mod
         {{custom_fwd_inputs | indent(8)}}
@@ -222,7 +222,7 @@ def flashattn_bwd(batch, heads, seq_len, dim, dimv, is_casual,
 
         dQ: T.Buffer(shape, accum_dtype), # type: ignore
         dK: T.Buffer(shape, dtype), # type: ignore
-        dV: T.Buffer(shape, dtype), # type: ignore
+        dV: T.Buffer(shape_v, dtype), # type: ignore
     ):
         with T.Kernel(heads, T.ceildiv(seq_len, block_M), batch, threads=thread_num) as (bx, by, bz):
             K_shared = T.alloc_shared([block_M, dim], dtype)
@@ -374,7 +374,7 @@ class _attention(torch.autograd.Function):
         thread_num = {{thread_num}} # 256
         shared_fuse = {{shared_fuse}} # False
         output_idx_list = {{output_idx_list}}
-        mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, block_M, block_N, stages, thread_num, shared_fuse)
+        mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, block_M, block_N, stages, thread_num, shared_fuse)
         if len(output_idx_list) == 1:
             o = mod(q, k, v, *custom_fwd_inputs)
             final_scale = []
@@ -395,14 +395,14 @@ class _attention(torch.autograd.Function):
         block_M = {{block_M_bwd}} # 128
         block_N = {{block_N_bwd}} # 64 
         thread_num = {{thread_num_bwd}} # 256
-        mod_prep = tl.cached(flashattn_bwd_preprocess, [2], BATCH, H, N_CTX, D_HEAD, D_HEAD_V)
-        mod_post = tl.cached(flashattn_bwd_postprocess, [1], BATCH, H, N_CTX, D_HEAD, D_HEAD_V)
+        mod_prep = tl.profiler.cached(flashattn_bwd_preprocess, [2], BATCH, H, N_CTX, D_HEAD, D_HEAD_V)
+        mod_post = tl.profiler.cached(flashattn_bwd_postprocess, [1], BATCH, H, N_CTX, D_HEAD, D_HEAD_V)
         if {{isused_doosum}}:
             delta = mod_prep(o, do)
         # TODO: causal
         is_casual = {{is_inf_mask}}
         output_idx_list = {{bwd_output_idx_list}}
-        mod = tl.cached(
+        mod = tl.profiler.cached(
             flashattn_bwd, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEAD_V, is_casual, block_M, block_N, thread_num
         )
         if {{isused_doosum}}:

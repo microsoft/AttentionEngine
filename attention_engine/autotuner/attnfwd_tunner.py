@@ -7,14 +7,14 @@ import concurrent.futures
 import traceback
 
 import torch
-from tvm import tl
-import tvm.tl.language as T
+import tilelang as tl
+import tilelang.language as T
 
 
 def cache_module(tuned_config, kernel, output_idx_list,
                  BATCH, H, N_CTX, D_HEAD, D_HEADV):
     try:  # cache
-        mod = tl.cached(
+        mod = tl.profiler.cached(
             kernel,
             output_idx_list,
             BATCH,
@@ -112,7 +112,7 @@ class AttnFwdTunner:
         # Step 2: Benchmark serially
         for mod, tuned_config in cached_results:
             try:
-                # mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
+                # mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
                 output_dict = bench_func(mod, BATCH, H, N_CTX, D_HEAD, D_HEADV)
                 latency = output_dict['latency']
                 tflops = output_dict['tflops']
@@ -141,7 +141,7 @@ class AttnFwdTunner:
 
         # for tuned_config in tuned_configs:
         #     try:
-        #         mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
+        #         mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTX, D_HEAD, D_HEADV, *tuned_config.values())
         #     except Exception as e:
         #         print(e)
         #         continue

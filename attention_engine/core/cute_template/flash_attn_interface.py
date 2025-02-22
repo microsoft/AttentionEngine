@@ -103,6 +103,7 @@ if not SKIP_CUDA_BUILD:
     sources = [
         os.path.join(os.path.dirname(__file__), "flash_api.cpp"),
         os.path.join(os.path.dirname(__file__), "flash_fwd.cu"),
+        os.path.join(os.path.dirname(__file__), "flash_bwd.cu"),
     ]
     nvcc_flags = [
         "-O3",

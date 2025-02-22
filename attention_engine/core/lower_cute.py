@@ -50,6 +50,10 @@ class LowerCuteOutput:
     score_mod_code: str = ""
     global_tensor_args: str = ""
     custom_tensors: str = ""
+    
+    # TODO: tmp solution
+    # void *__restrict__ softmax_lse_ptr; 
+    global_ptr_params_def_bwd: str = "void *__restrict__ softmax_lse_ptr;"
 
 
 def lower_online_func(online_func, lower_cute_output: LowerCuteOutput):
@@ -250,6 +254,10 @@ def lower_cute(score_mod, block_mask, online_func,
         lower_score_mod(score_mod, custom_fwd_inputs, lower_cute_output)
     if online_func:
         lower_online_func(online_func, lower_cute_output)
+        
+    # TODO: tmp solution
+    if "softmax_lse_ptr" in lower_cute_output.global_ptr_params_def:
+        lower_cute_output.global_ptr_params_def_bwd = ""
 
     return CuteAttnTemplate(
         **lower_cute_output.__dict__,

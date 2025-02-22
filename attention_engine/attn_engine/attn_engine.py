@@ -132,7 +132,7 @@ class AttentionEngine:
                 configs = st.generate_config()
                 print(configs)
                 # program = tl_kernel(B, H, S, DK, DV, *configs[0].values())
-                # from tvm import tl
+                # import tilelang as tl
                 # mod, params = tl.lower(program)
                 problem_keys = {
                     "B": B, "H": H, "N_CTX": S, "D_HEAD": DK, "D_HEADV": DV  # , "causal":True

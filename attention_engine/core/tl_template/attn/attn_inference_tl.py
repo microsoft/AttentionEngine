@@ -1,7 +1,7 @@
 # TL_IMPORT = """
 import torch
-from tvm import tl
-import tvm.tl.language as T
+import tilelang as tl
+import tilelang.language as T
 import torch.nn.functional as F
 
 # TL_GLOBAL_FUNC = """
@@ -171,8 +171,8 @@ def kernel(batch, heads, seq_len, seq_len_kv, dim, dimv,
             
             T.annotate_layout(
                 {
-                    o_accum_local: T.Fragment(o_accum_local.shape, lambda i, j: i),
-                    lse_local_split: T.Fragment(lse_local_split.shape, lambda i: i),
+                    o_accum_local: T.Fragment(o_accum_local.shape, forward_thread_fn=lambda i, j: i),
+                    lse_local_split: T.Fragment(lse_local_split.shape, forward_thread_fn=lambda i: i),
                     # logsum_accum_local: T.Fragment(logsum_accum_local.shape, lambda i: i),
                     o_shared: tl.layout.make_swizzled_layout(o_shared),
                     po_shared: tl.layout.make_swizzled_layout(po_shared),
@@ -185,9 +185,7 @@ def kernel(batch, heads, seq_len, seq_len_kv, dim, dimv,
             # T.copy(glse[bz, by, :, bx * block_M : (bx + 1) * block_M,], lse_shared)
             T.reduce_max(lse_local, lse_max_local, dim=0, clear=False)
             for k in T.Pipelined(num_split):
-                # CAUTION: This is a hack implementation to avoid the compilation bug, need to be fixed
-                # The correct implementation should be: T.copy(lse_local[k, :], lse_local_split)
-                T.copy(lse_local[0, :], lse_local_split)
+                T.copy(lse_local[k, :], lse_local_split)
                 for i in T.Parallel(block_M):
                     lse_logsum_local[i] += T.exp2(lse_local_split[i] - lse_max_local[i])
             for i in T.Parallel(block_M):
@@ -235,7 +233,6 @@ class _attention(torch.autograd.Function):
             q = F.pad(q, (0, 0, 0 , 0, 0, {{block_M}} - N_CTXQ))
             N_CTXQ = {{block_M}}
             
-        
         num_split = 4
         block_M = {{block_M}} # 128
         block_N = {{block_N}} # 128 if D_HEAD <= 128 else 64
@@ -243,7 +240,7 @@ class _attention(torch.autograd.Function):
         thread_num = {{thread_num}} # 256
         shared_fuse = {{shared_fuse}} # False
         output_idx_list = {{output_idx_list}}
-        mod = tl.cached(kernel, output_idx_list, BATCH, H, N_CTXQ, N_CTXKV, D_HEAD, D_HEADV, num_split, block_M, block_N, stages, thread_num, shared_fuse)
+        mod = tl.profiler.cached(kernel, output_idx_list, BATCH, H, N_CTXQ, N_CTXKV, D_HEAD, D_HEADV, num_split, block_M, block_N, stages, thread_num, shared_fuse)
         
         O_partial = torch.empty(BATCH, N_CTXQ, H, num_split, D_HEADV, dtype=q.dtype, device=q.device)
         {{torch_alloc_final_rowscales | indent(8)}}

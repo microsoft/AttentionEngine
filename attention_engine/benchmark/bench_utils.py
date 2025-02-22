@@ -232,7 +232,7 @@ def print_debug(o, O_ref, rtol=1e-3, atol=1e-3, save_file=True):
 #     o_ref = flash_attn_func(query, key, value, softmax_scale=1.0,causal=True, sigmoid_bias=softmax_bias_cpu)
 #     # print_debug(o, o_ref)
 
-#     from tvm.tl.utils import do_bench
+#     from tilelang.profiler import do_bench
 #     def run():
 #         o = attn(query, key, value, softmax_bias)
 
@@ -350,7 +350,7 @@ def do_bench_mamba(linear_attention, B, HQ, HK, H, TLen,
             rtol=1e-2,
             atol=1e-2)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         out = linear_attention(
@@ -494,7 +494,7 @@ def test_mamba_simple_gla():
     # analysis_tensor_data(dt_mamba.grad, plot=True, figure_name='tensor_distribution_dt_mamba_grad01.png')
     assert check_close(A_mamba1_grad, A_mamba.grad, rtol=9e-2, atol=4e-2)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         out, _ = chunk_simple_gla(
@@ -578,7 +578,7 @@ def do_bench_simple_gla(linear_attention, B, H, TLen,
         print_debug(v.grad, v1.grad, rtol=1e-2, atol=1e-2)
         print_debug(g.grad, g1.grad.float(), rtol=1e-2, atol=1e-2)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         out = linear_attention(
@@ -664,7 +664,7 @@ def do_bench_retention_linear(
         print_debug(k.grad, k1.grad, rtol=1e-2, atol=1e-2)
         print_debug(v.grad, v1.grad, rtol=1e-2, atol=1e-2)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         out = linear_attention(
@@ -746,7 +746,7 @@ def do_bench_sigmoidattn(attn, B, H, S, D, DV,
         print_debug(key.grad, dK)
         print_debug(value.grad, dV)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value, softmax_bias)
@@ -836,7 +836,7 @@ def do_bench_sigmoidattn_cute(
         print_debug(key.grad, dK)
         print_debug(value.grad, dV)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value, softmax_bias)
@@ -915,7 +915,7 @@ def bench_sigmoidattn_fwd(attn, B, H, S, D, DV, causal=True):
         sigmoid_bias=softmax_bias_cpu)
     # print_debug(o, o_ref)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value, softmax_bias)
@@ -988,7 +988,7 @@ def do_bench_reluattn(attn, B, H, S, D, DV,
         print_debug(key.grad, dK)
         print_debug(value.grad, dV)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value)
@@ -1073,7 +1073,7 @@ def do_bench_retention(attn, B, H, S, D, DV, dtype=torch.bfloat16):
     # analysis_tensor_data(o-o_ref, plot=True, figure_name='tensor_distribution_o_diff.png')
     # torch.testing.assert_close(o,o_ref)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value, mask)
@@ -1141,7 +1141,7 @@ def bench_retention_fwd(attn, B, H, S, D, DV, dtype=torch.bfloat16):
     # print_debug(o,o_ref,1e-2,1e-2)
     # torch.testing.assert_close(o,o_ref)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value, mask)
@@ -1271,7 +1271,7 @@ def do_bench_attention(attn, B, H, S, D, DV, mod=None, dtype=torch.float16,
         print_debug(key.grad, dK)
         print_debug(value.grad, dV)
 
-    # from tvm.tl.utils import do_bench
+    # from tilelang.profiler import do_bench
     def run():
         o = attn(query, key, value)
 
@@ -1293,7 +1293,7 @@ def do_bench_attention(attn, B, H, S, D, DV, mod=None, dtype=torch.float16,
 
     # do_bench(run)
     # do_bench(run_bacward)
-    from tvm import tl
+    import tilelang as tl
     if mod:
         program = mod(B, H, S, D, DV, 64, 64, 2, 128)
         mod, params = tl.lower(program)
@@ -1390,7 +1390,7 @@ def do_bench_attention_bwd_fa2(attn, B, H, S, D, DV, mod=None,
         print_debug(key.grad, dK)
         print_debug(value.grad, dV)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value)
@@ -1508,7 +1508,7 @@ def bench_attention_fwd(attn, B, H, S, D, DV):
     o_ref = fa2(dim_padded_fa2)
     # print_debug(o,o_ref)
 
-    from tvm.tl.utils import do_bench
+    from tilelang.profiler import do_bench
 
     def run():
         o = attn(query, key, value)
@@ -1621,7 +1621,7 @@ def do_bench_attention_128256(B, H, S, D, DV, dtype=torch.float16):
     o_ref = fa2(dim_padded_fa2)
     print_debug(o_ref, o_ref3)
 
-    # from tvm.tl.utils import do_bench
+    # from tilelang.profiler import do_bench
     def run_ref():
         fa2(dim_padded_fa2)
 
@@ -1841,7 +1841,7 @@ def do_bench_flashinfer(attn, B, H, S, D, DV, dtype=torch.float16):
     else:
         def run(): return prefill_wrapper.run(query, kv_cache)
 
-    # from tvm.tl.utils import do_bench
+    # from tilelang.profiler import do_bench
 
     # tl slow down when rep too large
     latency = do_bench(run, warmup=50, rep=100)
@@ -2043,7 +2043,7 @@ def do_bench_sigmoid_flashinfer(attn, B, H, S, D, DV, dtype=torch.float16):
     else:
         def run(): return prefill_wrapper.run(query, kv_cache)
 
-    # from tvm.tl.utils import do_bench
+    # from tilelang.profiler import do_bench
 
     # tl slow down when rep too large
     latency = do_bench(run, warmup=50, rep=100)
@@ -2051,7 +2051,7 @@ def do_bench_sigmoid_flashinfer(attn, B, H, S, D, DV, dtype=torch.float16):
     print("tflops: {:.2f}".format(tflops / latency * 1e-9))
 
 
-#     from tvm.tl.utils import do_bench
+#     from tilelang.profiler import do_bench
 #     def run():
 #         o = attn(query, key, value, softmax_bias)
 #     def run_bacward():
