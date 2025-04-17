@@ -216,7 +216,7 @@ class AttentionEngine:
             return tl_code, None
         
         # train/prefill mha forward & backward
-        if q_seqlen == kv_len:
+        if q_seqlen == kv_len and head == head_kv:
             from core.lower.lower import lower_tl
             tl_code, block_mask = lower_tl(score_mod,
                                 mask_mod,
@@ -233,7 +233,26 @@ class AttentionEngine:
                                 tune=tune, tune_file=tune_file,
                                 tune_bwd=tune_bwd, tune_file_bwd=tune_file_bwd)
             return tl_code, block_mask
-            
+        
+        # gqa forward & backward
+        if q_seqlen == kv_len and head > head_kv:
+            from core.lower.lower_gqa import lower_tl
+            tl_code, block_mask = lower_tl(score_mod,
+                                mask_mod,
+                                online_func,
+                                custom_fwd_inputs,
+                                qkv_meta[0].shape[0], # B
+                                qkv_meta[0].shape[1], # H
+                                q_seqlen, # S
+                                qkv_meta[0].shape[3],
+                                qkv_meta[2].shape[3],
+                                tl_dtype_map[qkv_meta[0].dtype],
+                                mask_value,
+                                tuned_config, infer_mask, 
+                                tune=tune, tune_file=tune_file,
+                                tune_bwd=tune_bwd, tune_file_bwd=tune_file_bwd)
+            return tl_code, block_mask
+        
     def _compile_tl(self, qkv_meta, custom_fwd_inputs, score_mod, mask_mod,
                     online_func, mask_value="-inf", tuned_config=None, infer_mask=False,
                     tune=False, tune_file="",
