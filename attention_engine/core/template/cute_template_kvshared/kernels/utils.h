@@ -30,3 +30,13 @@
     } while(0)
 
 #define println(fmt, ...) { print(fmt, ##__VA_ARGS__); print("\n"); }
+
+template <int Start, int N, size_t... Is>
+constexpr auto make_custom_index_sequence(std::index_sequence<Is...>) {
+    return std::index_sequence<(Start + Is)...>{};
+}
+
+template <int Start, int N>
+constexpr auto make_custom_index_sequence() {
+    return make_custom_index_sequence<Start, N>(std::make_index_sequence<N>{});
+}

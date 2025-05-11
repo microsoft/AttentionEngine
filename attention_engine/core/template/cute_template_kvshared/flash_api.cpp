@@ -105,8 +105,8 @@ mha_fwd_kvcache_mla(
     const int seqlen_q_ori = sizes[1];
     const int num_heads_q = sizes[2];
     const int head_size_k = sizes[3];
-    TORCH_CHECK(head_size_k == 576, "Only head_size_k == 576 is supported");
-    TORCH_CHECK(head_size_v == 512, "Only head_size_v == 576 is supported");
+    TORCH_CHECK(head_size_k % 64 == 0, "Only head_size_k must be a multiple of 64");
+    TORCH_CHECK(head_size_v % 64 == 0, "Only head_size_v must be a multiple of 64");
 
     const int max_num_blocks_per_seq = block_table.size(1);
     const int num_blocks = kcache.size(0);
@@ -186,7 +186,7 @@ mha_fwd_kvcache_mla(
     params.oaccum_ptr = out_accum.data_ptr();
 
     auto stream = at::cuda::getCurrentCUDAStream().stream();
-    TORCH_CHECK(head_size_k == 576);
+    // TORCH_CHECK(head_size_k == 576);
     if (q_dtype == torch::kBFloat16) {
         run_flash_splitkv_mla_kernel<cutlass::bfloat16_t>(params, stream);
         run_flash_mla_combine_kernel<cutlass::bfloat16_t>(params, stream);

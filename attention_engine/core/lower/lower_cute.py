@@ -243,7 +243,7 @@ def lower_score_mod(score_mod, custom_fwd_inputs,
 
 def lower_cute(score_mod, block_mask, online_func,
                custom_fwd_inputs,
-               dimqk, dimv, cutlass_dtype, template_dir=None):
+               dimqk, dimv, cutlass_dtype, template_dir=None, output_dir=None):
 
     lower_cute_output = LowerCuteOutput()
     lower_cute_output.dimqk = str(dimqk)
@@ -261,6 +261,8 @@ def lower_cute(score_mod, block_mask, online_func,
 
     if template_dir is not None:
         lower_cute_output.template_dir = template_dir
+    if output_dir is not None:
+        lower_cute_output.output_dir = output_dir
     return CuteAttnTemplate(
         **lower_cute_output.__dict__,
     )()

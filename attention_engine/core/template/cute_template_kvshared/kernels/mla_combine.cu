@@ -182,6 +182,8 @@ void run_flash_mla_combine_kernel(Flash_fwd_mla_params &params, cudaStream_t str
         constexpr int NUM_THREADS = BLOCK_SIZE_M*32;
         constexpr size_t smem_size = BLOCK_SIZE_M*(NUM_SPLITS+1)*sizeof(float);
         auto combine_kernel = &flash_fwd_mla_combine_kernel<ElementT, Config::HEAD_DIM_V, BLOCK_SIZE_M, NUM_SPLITS, NUM_THREADS>;
+        // printf("Running flash_fwd_mla_combine_kernel with %d splits\n", NUM_SPLITS);
+        // printf("smem_size: %zu\n", smem_size);
         CHECK_CUDA(cudaFuncSetAttribute(combine_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size));
         // Use cudaLaunchKernelEx to enable PDL (Programmatic Dependent Launch)
         cudaLaunchAttribute attribute[1];

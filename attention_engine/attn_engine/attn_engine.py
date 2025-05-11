@@ -153,6 +153,12 @@ class AttentionEngine:
                     osp.dirname(
                         osp.abspath(__file__)),
                     "../core/template/cute_template_kvshared")
+                dimqk = qkv_meta[0].shape[3]
+                dimv = qkv_meta[2].shape[3]
+                OUTPUT_DIR = osp.join(
+                    osp.dirname(
+                        osp.abspath(__file__)),
+                    f"../core/template/cute_template_output_{dimqk}_{dimv}")
                 file_path = os.path.join(OUTPUT_DIR, "flash_mla_interface.py")
             cutlass_dtype_map = {
                 torch.float16: "cutlass::half_t",
@@ -165,7 +171,8 @@ class AttentionEngine:
                        qkv_meta[0].shape[3],
                        qkv_meta[2].shape[3],
                        cutlass_dtype_map[qkv_meta[0].dtype],
-                       template_dir=template_dir)
+                       template_dir=template_dir,
+                       output_dir=OUTPUT_DIR,)
             spec = importlib.util.spec_from_file_location(
                 "cute_attn", file_path)
             cute_attn = importlib.util.module_from_spec(spec)
@@ -189,6 +196,8 @@ class AttentionEngine:
                     s_q * h_q // h_kv,
                     h_kv,
                 )
+                # print("num_split", num_split)
+                # print("tile_scheduler_metadata", tile_scheduler_metadata)
                 max_seqlen = cache_seqlens.max().item()
                 max_seqlen_pad = ((max_seqlen+255) // 256) * 256
                 block_size = 64

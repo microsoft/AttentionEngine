@@ -49,10 +49,11 @@ struct Traits {
     ));
 
     using SmemLayoutK = decltype(tile_to_shape(
-        GMMA::Layout_K_SW128_Atom<InputT>{},
+        GMMA::Layout_K_SW128_Atom<InputT>{}, // GMMA::Layout_K_SW32_Atom<InputT>{},
         Shape<Int<PAGE_BLOCK_SIZE>, Int<HEAD_DIM_K>>{}
     ));
 
+    // SmemLayoutK o (512, 64): (_,1) 
     using SmemLayoutV = decltype(composition(
         SmemLayoutK{},
         make_layout(Shape<Int<HEAD_DIM_V>, Int<PAGE_BLOCK_SIZE>>{}, GenRowMajor{})
@@ -68,7 +69,7 @@ struct Traits {
         Shape<Int<BLOCK_SIZE_M>, Int<PAGE_BLOCK_SIZE>>{}
     )));
 
-    struct SharedMemoryPlan {
+    struct SharedMemoryPlan: cute::aligned_struct<128> {
         cute::array_aligned<InputT, cosize_v<SmemLayoutQ>> smem_sQ;
         cute::array_aligned<InputT, cosize_v<SmemLayoutK>> smem_sK0;
         cute::array_aligned<InputT, cosize_v<SmemLayoutK>> smem_sK1;
